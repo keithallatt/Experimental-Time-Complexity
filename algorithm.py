@@ -3,6 +3,7 @@ import time
 import math
 import sys
 import subprocess
+import os
 
 
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
@@ -26,9 +27,12 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 	if iteration == total: 
 		print()
 
+# null pipe to ignore output to file.
+output_pipe = open(os.devnull, "w+")
 
-file_output = sys.argv[1]
-output_pipe = open(file_output, "w+")
+if len(sys.argv) > 1:
+	file_output = sys.argv[1]
+	output_pipe = open(file_output, "w+")
 
 class AlgoTest:
 	def __init__(self, func, input_gen, sample_size, input_range):
@@ -71,21 +75,26 @@ def cubic_op(lst):
 		quadratic_op(lst)
 
 if __name__ == "__main__":
-	input_range = [10, 1000]
+	try:
+		input_range = [100, 100000]
+		sample_size = 500
 
-	sample_size = 100
-
-	test = AlgoTest(cubic_op, gen_list, sample_size, input_range)
-	output_pipe.write("n,t,logn,logt\n")
+		test = AlgoTest(linear_op, gen_list, sample_size, input_range)
+		if output_pipe is not None:
+			output_pipe.write("n,t,logn,logt\n")
 	
-	progress_bar_length = 50
-
-	printProgressBar(0, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
+		progress_bar_length = 50
+		printProgressBar(0, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
 	
+		for line in test.test():
+			output_pipe.write(",".join([str(x) for x in [line[0],line[1], math.log(line[0]), math.log(line[1])]])+"\n")
 
-
-	for line in test.test():
-		output_pipe.write(",".join([str(x) for x in [line[0],line[1], math.log(line[0]), math.log(line[1])]])+"\n")
+			printProgressBar(test.current, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
+	
+	except KeyboardInterrupt:
+		output_pipe.flush()
+		output_pipe.close()
 		
-
 		printProgressBar(test.current, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
+		print(f"\nProcessed input saved to {output_pipe.name}\nProcess terminated via Keyboard Interrupt.")
+
