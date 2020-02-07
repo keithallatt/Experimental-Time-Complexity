@@ -74,11 +74,12 @@ class AlgoTest:
 			self.current += 1
 			yield (input_size, t2 - t1)
 			
+def const_op(lst):
+	return len(lst)
 
 def linear_op(lst):
 	for i in range(len(lst)):
 		lst[i] += 1
-
 
 def quadratic_op(lst):
 	for i in range(len(lst)):
@@ -94,10 +95,10 @@ if __name__ == "__main__":
 	log_t = np.array([])
 	log_n = np.array([])
 	try:
-		input_range = [10, 1000]
+		input_range = [100, 100000]
 		sample_size = 500
 
-		test = AlgoTest(cubic_op, gen_list, sample_size, input_range)
+		test = AlgoTest(const_op, gen_list, sample_size, input_range)
 		if output_pipe is not None:
 			output_pipe.write("n,t,logn,logt\n")
 	
@@ -107,12 +108,26 @@ if __name__ == "__main__":
 		# store results
 
 		for line in test.test():
-			output_pipe.write(",".join([str(x) for x in [line[0],line[1], math.log(line[0]), math.log(line[1])]])+"\n")
+			
+			ln = 0
+			try:
+				ln = math.log(line[0])
+			except ValueError:
+				pass
+
+			lt = 0
+			try:
+				lt = math.log(line[1])
+			except ValueError:
+				pass
+
+
+			output_pipe.write(",".join([str(x) for x in [line[0],line[1], ln, lt]])+"\n")
 			
 			n     = np.append(n, [[line[0]]])
 			t     = np.append(t, [[line[1]]])
-			log_n = np.append(log_n, [[math.log(line[0])]])
-			log_t = np.append(log_t, [[math.log(line[1])]])
+			log_n = np.append(log_n, [[ln]])
+			log_t = np.append(log_t, [[lt]])
 
 			printProgressBar(test.current, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
 	
