@@ -24,7 +24,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 	"""
 	percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
 	filledLength = int(length * iteration // total)
-	bar = fill * filledLength + '-' * (length - filledLength)
+	bar = fill * filledLength + ' ' * (length - filledLength)
 	print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = printEnd)
 	# Print New Line on Complete
 	if iteration == total: 
@@ -89,17 +89,19 @@ def cubic_op(lst):
 		quadratic_op(lst)
 
 if __name__ == "__main__":
+	n     = np.array([])
+	t     = np.array([])
 	log_t = np.array([])
 	log_n = np.array([])
 	try:
-		input_range = [100, 100000]
+		input_range = [10, 1000]
 		sample_size = 500
 
-		test = AlgoTest(quadratic_op, gen_list, sample_size, input_range)
+		test = AlgoTest(cubic_op, gen_list, sample_size, input_range)
 		if output_pipe is not None:
 			output_pipe.write("n,t,logn,logt\n")
 	
-		progress_bar_length = 50
+		progress_bar_length = 80
 		printProgressBar(0, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
 	
 		# store results
@@ -107,6 +109,8 @@ if __name__ == "__main__":
 		for line in test.test():
 			output_pipe.write(",".join([str(x) for x in [line[0],line[1], math.log(line[0]), math.log(line[1])]])+"\n")
 			
+			n     = np.append(n, [[line[0]]])
+			t     = np.append(t, [[line[1]]])
 			log_n = np.append(log_n, [[math.log(line[0])]])
 			log_t = np.append(log_t, [[math.log(line[1])]])
 
@@ -120,7 +124,13 @@ if __name__ == "__main__":
 		print(f"\nProcessed input saved to {output_pipe.name}\nProcess terminated via Keyboard Interrupt.")
 	finally:	
 		slope, intercept, r_value, p_value, std_err = stats.linregress(log_n,log_t)
-		confidence = 1-std_err
-		print(slope, confidence)
+		
+		degree = int(slope+1) # go overboard, and check within
 
+		z = np.polyfit(n, t, degree)
+		
+		#max_term = max(z.data)
+		max_term = np.argmax(z)		
+		print(z)
+		print(max_term)
 
