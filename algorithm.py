@@ -25,7 +25,12 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 	percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
 	filledLength = int(length * iteration // total)
 	bar = fill * filledLength + ' ' * (length - filledLength)
+	sys.stdout.write('\x1b[1A')
+
+	print('Processing element (' + str(iteration)+"/"+str(total)+")")
+
 	print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = printEnd)
+
 	# Print New Line on Complete
 	if iteration == total: 
 		print()
@@ -75,11 +80,11 @@ class AlgoTest:
 			yield (input_size, t2 - t1)
 			
 def const_op(lst):
-	return len(lst)
+	time.sleep(0.0001)
 
 def linear_op(lst):
 	for i in range(len(lst)):
-		lst[i] += 1
+		continue
 
 def quadratic_op(lst):
 	for i in range(len(lst)):
@@ -90,15 +95,17 @@ def cubic_op(lst):
 		quadratic_op(lst)
 
 if __name__ == "__main__":
+	print()  # needed for progres bar to appear correctly.
+
 	n     = np.array([])
 	t     = np.array([])
 	log_t = np.array([])
 	log_n = np.array([])
 	try:
 		input_range = [100, 100000]
-		sample_size = 500
+		sample_size = 1000
 
-		test = AlgoTest(const_op, gen_list, sample_size, input_range)
+		test = AlgoTest(quadratic_op, gen_list, sample_size, input_range)
 		if output_pipe is not None:
 			output_pipe.write("n,t,logn,logt\n")
 	
@@ -144,8 +151,12 @@ if __name__ == "__main__":
 
 		z = np.polyfit(n, t, degree)
 		
-		#max_term = max(z.data)
-		max_term = np.argmax(z)		
+		max_data = max(z.data)
+		power = 0
+		while z.data[power] != max_data:
+			power += 1
+		max_term = degree - power
+
 		print(z)
 		print(max_term)
 
