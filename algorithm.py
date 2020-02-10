@@ -35,14 +35,6 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 	if iteration == total: 
 		print()
 
-# null pipe to ignore output to file.
-output_pipe = open(os.devnull, "w+")
-
-if len(sys.argv) > 1:
-	file_output = sys.argv[1]
-	output_pipe = open(file_output, "w+")
-
-   
    
 def calc_lin_regress(n_value, t_value):
 	"""
@@ -54,7 +46,8 @@ def calc_lin_regress(n_value, t_value):
 
 
 class AlgoTest:
-	def __init__(self, func, input_gen, sample_size, input_range):
+	def __init__(self, test_name, func, input_gen, sample_size, input_range):
+		self.test_name = test_name
 		self.func = func
 		self.input_gen = input_gen
 		self.sample_size = sample_size
@@ -66,7 +59,7 @@ class AlgoTest:
 		return self.current / self.sample_size
 
 	def test(self):
-		for i in range(sample_size):
+		for i in range(self.sample_size):
 			input_size = self.input_range[0] + i * ((self.input_range[1] - self.input_range[0]) / self.sample_size)
 			input_size = int(input_size)
 
@@ -80,7 +73,7 @@ class AlgoTest:
 			yield (input_size, t2 - t1)
 			
 def const_op(lst):
-	time.sleep(0.0001)
+	pass
 
 def linear_op(lst):
 	for i in range(len(lst)):
@@ -95,27 +88,28 @@ def cubic_op(lst):
 		quadratic_op(lst)
 
 if __name__ == "__main__":
-	print()  # needed for progres bar to appear correctly.
-
 	n     = np.array([])
 	t     = np.array([])
 	log_t = np.array([])
 	log_n = np.array([])
 	try:
-		input_range = [100, 100000]
-		sample_size = 1000
+		test_0 = AlgoTest("Constant Op",  const_op,     gen_list, 3000, [100,1000000])
+		test_1 = AlgoTest("Linear Op",    linear_op,    gen_list, 2000, [1000,1000000])
+		test_2 = AlgoTest("Quadratic Op", quadratic_op, gen_list, 1000, [100,10000])
+		test_3 = AlgoTest("Cubic Op",     cubic_op,     gen_list,  400, [100,820])
+		
+		test = [test_0, test_1, test_2, test_3][int(sys.argv[1])]
 
-		test = AlgoTest(quadratic_op, gen_list, sample_size, input_range)
-		if output_pipe is not None:
-			output_pipe.write("n,t,logn,logt\n")
+		print(f"Testing the algorithm '{test.test_name}' for {test.sample_size} samples of the range {test.input_range}.")
 	
 		progress_bar_length = 80
+
+		print()  # needed for progres bar to appear correctly.
 		printProgressBar(0, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
 	
 		# store results
 
-		for line in test.test():
-			
+		for line in test.test():			
 			ln = 0
 			try:
 				ln = math.log(line[0])
@@ -127,10 +121,7 @@ if __name__ == "__main__":
 				lt = math.log(line[1])
 			except ValueError:
 				pass
-
-
-			output_pipe.write(",".join([str(x) for x in [line[0],line[1], ln, lt]])+"\n")
-			
+	
 			n     = np.append(n, [[line[0]]])
 			t     = np.append(t, [[line[1]]])
 			log_n = np.append(log_n, [[ln]])
@@ -138,25 +129,28 @@ if __name__ == "__main__":
 
 			printProgressBar(test.current, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
 	
-	except KeyboardInterrupt:
-		output_pipe.flush()
-		output_pipe.close()
-		
+	except KeyboardInterrupt:	
 		printProgressBar(test.current, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
-		print(f"\nProcessed input saved to {output_pipe.name}\nProcess terminated via Keyboard Interrupt.")
-	finally:	
-		slope, intercept, r_value, p_value, std_err = stats.linregress(log_n,log_t)
+	except (ValueError, IndexError) as e:
+		print("Please only enter 0,1,2,3 as second parameter")
+		exit(0)
+	
+	slope, intercept, r_value, p_value, std_err = stats.linregress(log_n,log_t)
+	
+	degree = int(slope+1) # go overboard, and check within
+	z = np.polyfit(n, t, degree)
 		
-		degree = int(slope+1) # go overboard, and check within
-
-		z = np.polyfit(n, t, degree)
+	max_data = max(z.data[:2])
+	if max_data == z.data[1]:
+		degree -= 1
 		
-		max_data = max(z.data)
-		power = 0
-		while z.data[power] != max_data:
-			power += 1
-		max_term = degree - power
+	max_term = degree
 
-		print(z)
-		print(max_term)
+	p = np.poly1d(z.data)
+
+	print(f"Experimental log/log graph linear regression:\n\tlog(t) = {slope} log(n)", ("+" if intercept > 0 else ("" if intercept == 0 else "-")), ("" if intercept == 0 else str(abs(intercept))))
+	print(f"Approximate polynomial fitting original t / n samples of degree {degree}:")
+		
+	print(np.poly1d(p))
+	print(f"Best guess as in: O(", ("1" if max_term == 0 else ("n" if max_term == 1 else f"n^{max_term}")), ")", sep="")
 
