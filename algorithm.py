@@ -131,6 +131,7 @@ if __name__ == "__main__":
 	
 	except KeyboardInterrupt:	
 		printProgressBar(test.current, test.sample_size, prefix = 'Progress:', suffix = 'Complete', length = progress_bar_length)
+		print()
 	except (ValueError, IndexError) as e:
 		print("Please only enter 0,1,2,3 as second parameter")
 		exit(0)
@@ -141,15 +142,19 @@ if __name__ == "__main__":
 	z = np.polyfit(n, t, degree)
 		
 	max_data = max(z.data[:2])
-	if max_data == z.data[1]:
-		degree -= 1
-		
+	try:
+		if max_data == z.data[1]:
+			degree -= 1
+	except IndexError:
+		degree = 0
+
 	max_term = degree
 
 	p = np.poly1d(z.data)
 
 	print(f"Experimental log/log graph linear regression:\n\tlog(t) = {slope} log(n)", ("+" if intercept > 0 else ("" if intercept == 0 else "-")), ("" if intercept == 0 else str(abs(intercept))))
-	print(f"Approximate polynomial fitting original t / n samples of degree {degree}:")
+	d = degree+1
+	print(f"Approximate polynomial fitting original t / n samples of degree {d}:")
 		
 	print(np.poly1d(p))
 	print(f"Best guess as in: O(", ("1" if max_term == 0 else ("n" if max_term == 1 else f"n^{max_term}")), ")", sep="")
